@@ -36,6 +36,9 @@ ProductsRouter.get("/", async (req, res, next) => {
             where: { ...query },
             limit: req.query.limit,
             offset: req.query.offset,
+            order: [
+                ["name", "ASC"],
+            ],
             attributes: ["name", "price", "description", "productID"],
             include: [
                 { model: CategoriesModel, attributes: ["name"], through: { attributes: [] } },
