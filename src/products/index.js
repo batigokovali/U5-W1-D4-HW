@@ -2,6 +2,10 @@ import express from "express"
 import createHttpError from "http-errors"
 import { Op } from "sequelize"
 import ProductsModel from "./model.js"
+import ProductsCategoriesModel from "./productsCategoriesModel.js"
+import CategoriesModel from "../categories/model.js"
+import ReviewsModel from "../reviews/model.js"
+import UsersModel from "../users/model.js"
 
 const ProductsRouter = express.Router()
 
@@ -9,6 +13,13 @@ const ProductsRouter = express.Router()
 ProductsRouter.post("/", async (req, res, next) => {
     try {
         const { productID } = await ProductsModel.create(req.body)
+        if (req.body.categories) {
+            await ProductsCategoriesModel.bulkCreate(
+                req.body.categories.map(category => {
+                    return { productID: productID, categoryID: category }
+                })
+            )
+        }
         res.status(201).send({ productID })
     } catch (error) {
         next(error)
@@ -25,10 +36,20 @@ ProductsRouter.get("/", async (req, res, next) => {
             where: { ...query },
             limit: req.query.limit,
             offset: req.query.offset,
+            attributes: ["name", "price", "description", "productID"],
+            include: [
+                { model: CategoriesModel, attributes: ["name"], through: { attributes: [] } },
+                {
+                    model: ReviewsModel,
+                    attributes: ["reviewID", "content", "userID"],
+                    include: [{ model: UsersModel, attributes: ["firstName", "lastName"] }]
+                }
+            ],
         })
         if (req.query.offset && req.query.limit) {
-            let prevlinkAsNumber = parseInt(req.query.limit) - parseInt(req.query.offset)
+            let prevlinkAsNumber = parseInt(req.query.offset) - parseInt(req.query.limit)
             let prevLink = url.replace(`offset=${req.query.offset}`, `offset=${prevlinkAsNumber.toString()}`)
+
             let nextLinkAsNumber = parseInt(req.query.limit) + parseInt(req.query.offset)
             let nextLink = url.replace(`offset=${req.query.offset}`, `offset=${nextLinkAsNumber.toString()}`)
             links = [{ prev: prevLink }, { next: nextLink }]
@@ -52,7 +73,6 @@ ProductsRouter.get("/", async (req, res, next) => {
             query.description = { [Op.iLike]: req.query.description }
         }
         res.send({ count, rows, links })
-        console.log(rows)
     } catch (error) {
         next(error)
     }

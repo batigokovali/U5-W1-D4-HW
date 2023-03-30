@@ -4,7 +4,9 @@ import listEndpoints from "express-list-endpoints"
 import { pgConnect } from "./db.js"
 import { badRequestErrorHandler, genericErrorHandler, notFoundErrorHandler } from "./errorHandlers.js"
 import ProductsRouter from "./products/index.js"
-// import usersRouter from "./users/index.js"
+import categoriesRouter from "./categories/index.js"
+import usersRouter from "./users/index.js"
+import ReviewsRouter from "./reviews/index.js"
 
 const server = Express()
 const port = process.env.PORT || 3001
@@ -15,6 +17,9 @@ server.use(Express.json())
 
 //Endpoints
 server.use("/products", ProductsRouter)
+server.use("/categories", categoriesRouter)
+server.use("/users", usersRouter)
+server.use("/products", ReviewsRouter)
 
 //Error Handlers
 server.use(badRequestErrorHandler)
